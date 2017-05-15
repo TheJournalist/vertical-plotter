@@ -179,6 +179,76 @@ while not done:
     if keys[K_s]:
         moveDown(1)
 
+        
+'''
+import pygame
+from pygame.locals import *
+import cv2
+import numpy as np
+import sys
+
+pygame.init()
+myfont = pygame.font.SysFont("comicsans", 100)
+myfont.set_bold(True)
+label = myfont.render("Desenhar imagem?", 1, (0,0,0))
+pygame.display.set_caption("Vertical Plotter")
+screen = pygame.display.set_mode([1280,960])
+
+camera = cv2.VideoCapture(0)
+
+def dodgeV2(image, mask):
+  return cv2.divide(image, 255-mask, scale=256)
+
+def burnV2(image, mask):
+  return 255 - cv2.divide(255-image, 255-mask, scale=256)
+
+escolha = True
+
+try:
+    while True:
+        if escolha:
+            ret, frame = camera.read()	
+            screen.fill([0,0,0])
+            frame = np.rot90(frame)
+            frame = cv2.resize(frame, (960,1280))
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            screen.blit(pygame.surfarray.make_surface(frame), (0,0))
+            pygame.display.update()
+        else:
+            screen.fill([0,0,0])
+            screen.blit(pygame.surfarray.make_surface(cv2.cvtColor(cv2.resize(np.rot90(img_blend),(960,1280)),cv2.COLOR_GRAY2RGB)), (0,0))
+            screen.blit(label, (20, 880))
+            pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == KEYDOWN:
+                keys = pygame.key.get_pressed()
+                if keys[K_ESCAPE]:
+                    if escolha == False:
+                        escolha = True
+                    else:
+                        exit()
+                if keys[K_RETURN]:
+                    if escolha == False:
+                        #imprime
+                        print("IMPRIMIU!")
+                    else:
+                        escolha = False
+                        ret, frame = camera.read()
+                        img_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                        img_gray_inv = 255 - img_gray
+                        img_blur = cv2.GaussianBlur(img_gray_inv, ksize=(21, 21),sigmaX=0, sigmaY=0)
+                        img_blend = dodgeV2(img_gray, img_blur)
+                
+except KeyboardInterrupt,SystemExit:
+    pygame.quit()
+    cv2.destroyAllWindows()
+    del(camera)
+    exit()
+
+'''        
+        
+        
 ''' #---------------------------------------------------------------------------------
 # image processing examples
 
