@@ -182,6 +182,7 @@ while not done:
         
 '''
 import pygame
+import random
 from pygame.locals import *
 import cv2
 import numpy as np
@@ -196,10 +197,56 @@ def burnV2(image, mask):
 
 def getCommands(image):
   print(image.shape)
-  # 1280x960 / 16x6 = 80x160  
-  for j in range(2):#160
-    for i in range(2):#80
-      cv2.imshow(str(i*16)+':'+str((i+1)*16)+','+str(j*6)+':'+str((j+1)*6),cv2.resize(image[i*16:(i+1)*16,j*6:(j+1)*6],(160,60)))
+  # 1280x960 / 16x6 = 80x160
+  newimage = np.zeros((960,1280,3), np.uint8)
+  newimage = 255 - newimage
+  for i in range(80):
+    for j in range(160):
+      #cv2.imshow(str(i*16)+':'+str((i+1)*16)+','+str(j*6)+':'+str((j+1)*6),image[i*16:(i+1)*16,j*6:(j+1)*6])
+      media = np.median(image[i*16:(i+1)*16,j*6:(j+1)*6])
+      r = random.randint(-2, 2)
+      #newimage[j*6:(j+1)*6,i*16:(i+1)*16] = (media, media, media)
+      if media > 240:
+        cv2.line(newimage,(i*16+r,j*6),(i*16+r,(j+1)*6),(0,0,0), 1)
+      elif media > 200:
+        cv2.line(newimage,(i*16+r,j*6),(i*16+r,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+8+r,j*6),(i*16+8+r,(j+1)*6),(0,0,0), 1)
+      elif media > 160:
+        cv2.line(newimage,(i*16+r,j*6),(i*16+r,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+7,j*6),(i*16+r+7,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+14,j*6),(i*16+r+14,(j+1)*6),(0,0,0), 1)
+      elif media > 120:
+        cv2.line(newimage,(i*16+r,j*6),(i*16+r,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+5,j*6),(i*16+r+5,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+10,j*6),(i*16+r+10,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+14,j*6),(i*16+r+14,(j+1)*6),(0,0,0), 1)
+      elif media > 80:
+        cv2.line(newimage,(i*16+r,j*6),(i*16+r,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+3,j*6),(i*16+r+3,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+6,j*6),(i*16+r+6,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+9,j*6),(i*16+r+9,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+12,j*6),(i*16+r+12,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+15,j*6),(i*16+r+15,(j+1)*6),(0,0,0), 1)
+      elif media > 40:
+        cv2.line(newimage,(i*16+r,j*6),(i*16+r,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+2,j*6),(i*16+r+2,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+5,j*6),(i*16+r+5,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+7,j*6),(i*16+r+7,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+10,j*6),(i*16+r+10,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+13,j*6),(i*16+r+13,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+15,j*6),(i*16+r+15,(j+1)*6),(0,0,0), 1)
+      else:
+        cv2.line(newimage,(i*16+r,j*6),(i*16+r,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+1,j*6),(i*16+r+1,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+3,j*6),(i*16+r+3,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+5,j*6),(i*16+r+5,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+7,j*6),(i*16+r+7,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+9,j*6),(i*16+r+9,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+11,j*6),(i*16+r+11,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+13,j*6),(i*16+r+13,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*16+r+15,j*6),(i*16+r+15,(j+1)*6),(0,0,0), 1)
+        
+  cv2.imshow('huat',newimage)
  
 ## Setup ############################################################
 pygame.init()
@@ -225,6 +272,8 @@ try:
         else:
             screen.fill([0,0,0])
             img = cv2.cvtColor(cv2.resize(np.rot90(img_blend),(960,1280)),cv2.COLOR_GRAY2RGB)
+            img = (255.0/1)*(img/(255.0/1))**5
+            img = (255.0/1)*(img/(255.0/1))**5
             screen.blit(pygame.surfarray.make_surface(img), (0,0))
             screen.blit(label, (20, 880))
             pygame.display.update()
@@ -253,6 +302,7 @@ except KeyboardInterrupt,SystemExit:
     cv2.destroyAllWindows()
     del(camera)
     exit()
+
 
 
 '''        
