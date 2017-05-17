@@ -187,23 +187,31 @@ import cv2
 import numpy as np
 import sys
 
-pygame.init()
-myfont = pygame.font.SysFont("comicsans", 100)
-myfont.set_bold(True)
-label = myfont.render("Desenhar imagem?", 1, (0,0,0))
-pygame.display.set_caption("Vertical Plotter")
-screen = pygame.display.set_mode([1280,960])
-
-camera = cv2.VideoCapture(0)
-
+## Functions ########################################################
 def dodgeV2(image, mask):
   return cv2.divide(image, 255-mask, scale=256)
 
 def burnV2(image, mask):
   return 255 - cv2.divide(255-image, 255-mask, scale=256)
 
+def getCommands(image):
+  print(image.shape)
+  # 1280x960 / 16x6 = 80x160  
+  for j in range(2):#160
+    for i in range(2):#80
+      cv2.imshow(str(i*16)+':'+str((i+1)*16)+','+str(j*6)+':'+str((j+1)*6),cv2.resize(image[i*16:(i+1)*16,j*6:(j+1)*6],(160,60)))
+ 
+## Setup ############################################################
+pygame.init()
+myfont = pygame.font.SysFont("comicsans", 100)
+myfont.set_bold(True)
+label = myfont.render("Desenhar imagem?", 1, (0,0,0))
+pygame.display.set_caption("Vertical Plotter")
+screen = pygame.display.set_mode([1280,960])
+camera = cv2.VideoCapture(0)
 escolha = True
 
+## Main loop #########################################################
 try:
     while True:
         if escolha:
@@ -216,7 +224,8 @@ try:
             pygame.display.update()
         else:
             screen.fill([0,0,0])
-            screen.blit(pygame.surfarray.make_surface(cv2.cvtColor(cv2.resize(np.rot90(img_blend),(960,1280)),cv2.COLOR_GRAY2RGB)), (0,0))
+            img = cv2.cvtColor(cv2.resize(np.rot90(img_blend),(960,1280)),cv2.COLOR_GRAY2RGB)
+            screen.blit(pygame.surfarray.make_surface(img), (0,0))
             screen.blit(label, (20, 880))
             pygame.display.update()
 
@@ -230,8 +239,7 @@ try:
                         exit()
                 if keys[K_RETURN]:
                     if escolha == False:
-                        #imprime
-                        print("IMPRIMIU!")
+                       getCommands(img) 
                     else:
                         escolha = False
                         ret, frame = camera.read()
@@ -245,6 +253,7 @@ except KeyboardInterrupt,SystemExit:
     cv2.destroyAllWindows()
     del(camera)
     exit()
+
 
 '''        
         
