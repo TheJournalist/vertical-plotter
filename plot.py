@@ -5,6 +5,19 @@ from pygame.locals import *
 from pyA20.gpio import gpio
 from pyA20.gpio import port
 from time import sleep
+import random
+import sys
+
+
+## Setup ############################################################
+pygame.init()
+myfont = pygame.font.SysFont("comicsans", 60)
+myfont.set_bold(True)
+label = myfont.render("Desenhar imagem?", 1, (255,78,80))
+pygame.display.set_caption("Vertical Plotter")
+screen = pygame.display.set_mode([640,480])
+camera = cv2.VideoCapture(0)
+escolha = True
 
 # initialize the gpio module
 gpio.init()
@@ -23,19 +36,20 @@ gpio.output(port.PA1, gpio.LOW)
 gpio.output(port.PA6, gpio.LOW)
 gpio.output(port.PA0, gpio.LOW)
 
-x = 5.05
-dx = 0.1
-y = 8.63
-dy = 0.0
 D = 40.1
-L = 10.0
+L = 15.5
 R = 36.0
 dL = 0.0
 dR = 0.0
 somaPixels = 0
+x = D/2
+y = 11
+a = np.sqrt(x*x + y*y)
+b = a
+
 
 def display(str):
-    text = font.render(str, True, (255, 255, 255), (159, 182, 205))
+    text = myfont.render(str, True, (255, 255, 255), (159, 182, 205))
     textRect = text.get_rect()
     textRect.centerx = screen.get_rect().centerx
     textRect.centery = screen.get_rect().centery
@@ -43,39 +57,112 @@ def display(str):
     screen.blit(text, textRect)
     pygame.display.update()
 
-
-def moveTeste():
-    global x
-    global dx
-    global y
-    global dy
+def movex(deltaX):
     global D
-    global L
-    global R
-    global dL
-    global dR
+    global x
+    global y
+    global a
+    global b
+    xi = x
+    yi = y
+    dy = 0
 
-    while x < 20.0:
-        dL = (np.sqrt(L*L + 2*x*dx + 2*y*dy + dx*dx + dy*dy) - L) 
-        if dL > 0:
-            moveL(int(np.rint(dL/ 0.003575)), gpio.LOW)        
-        else:
-            moveL(int(np.rint(-dL/ 0.003575)), gpio.HIGH)
-        L = L + dL
-        print("dL - " + str(dL/ 0.003575)+ " " + str(np.rint(dL/ 0.003575))) 
+    if deltaX > 0:
+        dx = 0.1
         
-        dR = (np.sqrt(R*R + 2*(x-D)*dx + 2*y*dy + dx*dx + dy*dy) - R) 
-        if dR > 0:
-            moveR(int(np.rint(dR/ 0.00365)), gpio.HIGH)        
-        else:
-            moveR(int(np.rint(-dR/ 0.00365)), gpio.LOW)
-        R = R + dR
-        print("dR - " + str(dR/ 0.00365) + " " + str(np.rint(dR/ 0.00365)))
+        while x - xi < deltaX:
+            da = (x/a)*dx + (y/a)*dy
+            db = ((x-D)/b)*dx + (y/b)*dy
+            
+            x = x + dx
+            y = y + dy
+            a = a + da 
+            b = b + db
 
-        x = x + dx
-        y = y + dy
-        print("x - " + str(x))
+            if da > 0:
+                moveL(int(np.rint(da/0.003575)), gpio.LOW)
+            else:
+                moveL(int(np.rint(-da/0.003575)), gpio.HIGH)
+            
+            if db > 0:
+                moveR(int(np.rint(db/0.00365)), gpio.LOW)
+            else:
+                moveR(int(np.rint(-db/0.00365)), gpio.HIGH)
+    else:
+        dx = -0.1
+        
+        while xi - x < -deltaX:
+            da = (x/a)*dx + (y/a)*dy
+            db = ((x-D)/b)*dx + (y/b)*dy
+            
+            x = x + dx
+            y = y + dy
+            a = a + da 
+            b = b + db
 
+            if da > 0:
+                moveL(int(np.rint(da/0.003575)), gpio.LOW)
+            else:
+                moveL(int(np.rint(-da/0.003575)), gpio.HIGH)
+            
+            if db > 0:
+                moveR(int(np.rint(db/0.00365)), gpio.LOW)
+            else:
+                moveR(int(np.rint(-db/0.00365)), gpio.HIGH)
+    return
+
+def movey(deltaY):
+    global D
+    global x
+    global y
+    global a
+    global b
+    xi = x
+    yi = y
+    dx = 0
+
+    if deltaY > 0:
+        dy = 0.1
+        
+        while y - yi < deltaY:
+            da = (x/a)*dx + (y/a)*dy
+            db = ((x-D)/b)*dx + (y/b)*dy
+            
+            x = x + dx
+            y = y + dy
+            a = a + da 
+            b = b + db
+
+            if da > 0:
+                moveL(int(np.rint(da/0.003575)), gpio.LOW)
+            else:
+                moveL(int(np.rint(-da/0.003575)), gpio.HIGH)
+            
+            if db > 0:
+                moveR(int(np.rint(db/0.00365)), gpio.LOW)
+            else:
+                moveR(int(np.rint(-db/0.00365)), gpio.HIGH)
+    else:
+        dy = -0.1
+        
+        while yi - y < -deltaY:
+            da = (x/a)*dx + (y/a)*dy
+            db = ((x-D)/b)*dx + (y/b)*dy
+            
+            x = x + dx
+            y = y + dy
+            a = a + da 
+            b = b + db
+            
+            if da > 0:
+                moveL(int(np.rint(da/0.003575)), gpio.LOW)
+            else:
+                moveL(int(np.rint(-da/0.003575)), gpio.HIGH)
+            
+            if db > 0:
+                moveR(int(np.rint(db/0.00365)), gpio.LOW)
+            else:
+                moveR(int(np.rint(-db/0.00365)), gpio.HIGH)
     return
 
 def move(steps, dir1, dir2):
@@ -101,6 +188,7 @@ def moveL(steps, dir1):
         sleep(0.0001)
         gpio.output(port.PA6, gpio.LOW)
         sleep(0.0001)
+        sleep(0.01)
     return
 
 def moveR(steps, dir1):
@@ -113,23 +201,24 @@ def moveR(steps, dir1):
         sleep(0.0001)
         gpio.output(port.PA12, gpio.LOW)
         sleep(0.0001)
+        sleep(0.01)
     return
 
 def moveLeft(steps):
-    move(steps, gpio.HIGH, gpio.HIGH)
+    move(steps, gpio.LOW, gpio.HIGH)
     return
 
 def moveRight(steps):
-    move(steps, gpio.LOW, gpio.LOW)
+    move(steps, gpio.HIGH, gpio.LOW)
+    
     return
 
 def moveUp(steps):
-    move(steps, gpio.HIGH, gpio.LOW)
+    move(steps, gpio.HIGH, gpio.HIGH)
     return
 
 def moveDown(steps):
-    move(steps, gpio.LOW, gpio.HIGH)
-    
+    move(steps, gpio.LOW, gpio.LOW)
     return
 
 def servo(toggled):
@@ -139,18 +228,48 @@ def servo(toggled):
         gpio.output(port.PA0, gpio.LOW)
     return
 
-
-
-pygame.init()
-screen = pygame.display.set_mode((640,480))
-pygame.display.set_caption('Plotter!')
-screen.fill((159, 182, 205))
-font = pygame.font.Font(None, 17)
-num = 0
-done = False
-
-
-moveTeste()
+def periodo(dx):
+    movex(-dx)
+    movey(-0.5)
+    movex(-dx)    
+    movey(0.5)
+    return
+'''
+movey(10)
+movex(5)
+periodo(0.3)
+periodo(0.3)
+periodo(0.3)
+periodo(0.3)
+periodo(0.3)
+periodo(0.3)
+periodo(0.3)
+periodo(0.3)
+periodo(0.3)
+periodo(0.1)
+periodo(0.1)
+periodo(0.1)
+periodo(0.1)
+periodo(0.1)
+periodo(0.1)
+periodo(0.1)
+periodo(0.1)
+periodo(0.1)
+periodo(0.1)
+periodo(0.3)
+periodo(0.4)
+periodo(0.5)
+periodo(0.6)
+periodo(0.7)
+periodo(0.8)
+periodo(0.9)
+periodo(2)
+'''
+#movex(10)
+#movey(10)
+#movex(10)
+#movey(-10)
+#movedy(0.0, 0.1)
 
 #esquerda
 #moveR(2500, gpio.LOW)
@@ -161,6 +280,8 @@ moveTeste()
 #moveR(2500, gpio.HIGH)
 
 #moveDown(2000)
+done = False
+num = 0
 
 while not done:
     display(str(num))
@@ -179,15 +300,7 @@ while not done:
     if keys[K_s]:
         moveDown(1)
 
-        
-'''
-import pygame
-import random
-from pygame.locals import *
-import cv2
-import numpy as np
-import sys
-
+'''      
 ## Functions ########################################################
 def dodgeV2(image, mask):
   return cv2.divide(image, 255-mask, scale=256)
@@ -196,67 +309,55 @@ def burnV2(image, mask):
   return 255 - cv2.divide(255-image, 255-mask, scale=256)
 
 def getCommands(image):
-  print(image.shape)
-  # 1280x960 / 16x6 = 80x160
-  newimage = np.zeros((960,1280,3), np.uint8)
+  # 1280x960 / 16x6 = 40x80
+  newimage = np.zeros((480,640,3), np.uint8)
   newimage = 255 - newimage
   for i in range(80):
     for j in range(160):
-      #cv2.imshow(str(i*16)+':'+str((i+1)*16)+','+str(j*6)+':'+str((j+1)*6),image[i*16:(i+1)*16,j*6:(j+1)*6])
-      media = np.median(image[i*16:(i+1)*16,j*6:(j+1)*6])
+      #cv2.imshow(str(i*8)+':'+str((i+1)*8)+','+str(j*3)+':'+str((j+1)*3),image[i*8:(i+1)*8,j*3:(j+1)*3])
+      media = np.median(image[i*8:(i+1)*8,j*3:(j+1)*3])
       r = random.randint(-2, 2)
-      #newimage[j*6:(j+1)*6,i*16:(i+1)*16] = (media, media, media)
+      #newimage[j*3:(j+1)*3,i*8:(i+1)*8] = (media, media, media)
       if media > 240:
-        cv2.line(newimage,(i*16+r,j*6),(i*16+r,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r,j*3),(i*8+r,(j+1)*3),(0,0,0), 1)
       elif media > 200:
-        cv2.line(newimage,(i*16+r,j*6),(i*16+r,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+8+r,j*6),(i*16+8+r,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r,j*3),(i*8+r,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+8+r,j*3),(i*8+8+r,(j+1)*3),(0,0,0), 1)
       elif media > 160:
-        cv2.line(newimage,(i*16+r,j*6),(i*16+r,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+7,j*6),(i*16+r+7,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+14,j*6),(i*16+r+14,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r,j*3),(i*8+r,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+7,j*3),(i*8+r+7,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+14,j*3),(i*8+r+14,(j+1)*3),(0,0,0), 1)
       elif media > 120:
-        cv2.line(newimage,(i*16+r,j*6),(i*16+r,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+5,j*6),(i*16+r+5,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+10,j*6),(i*16+r+10,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+14,j*6),(i*16+r+14,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r,j*3),(i*8+r,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+5,j*3),(i*8+r+5,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+10,j*3),(i*8+r+10,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+14,j*3),(i*8+r+14,(j+1)*3),(0,0,0), 1)
       elif media > 80:
-        cv2.line(newimage,(i*16+r,j*6),(i*16+r,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+3,j*6),(i*16+r+3,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+6,j*6),(i*16+r+6,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+9,j*6),(i*16+r+9,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+12,j*6),(i*16+r+12,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+15,j*6),(i*16+r+15,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r,j*3),(i*8+r,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+3,j*3),(i*8+r+3,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+6,j*3),(i*8+r+6,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+9,j*3),(i*8+r+9,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+12,j*3),(i*8+r+12,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+15,j*3),(i*8+r+15,(j+1)*3),(0,0,0), 1)
       elif media > 40:
-        cv2.line(newimage,(i*16+r,j*6),(i*16+r,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+2,j*6),(i*16+r+2,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+5,j*6),(i*16+r+5,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+7,j*6),(i*16+r+7,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+10,j*6),(i*16+r+10,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+13,j*6),(i*16+r+13,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+15,j*6),(i*16+r+15,(j+1)*6),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r,j*3),(i*8+r,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+2,j*3),(i*8+r+2,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+5,j*3),(i*8+r+5,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+7,j*3),(i*8+r+7,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+10,j*3),(i*8+r+10,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+13,j*3),(i*8+r+13,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+15,j*3),(i*8+r+15,(j+1)*3),(0,0,0), 1)
       else:
-        cv2.line(newimage,(i*16+r,j*6),(i*16+r,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+1,j*6),(i*16+r+1,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+3,j*6),(i*16+r+3,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+5,j*6),(i*16+r+5,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+7,j*6),(i*16+r+7,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+9,j*6),(i*16+r+9,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+11,j*6),(i*16+r+11,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+13,j*6),(i*16+r+13,(j+1)*6),(0,0,0), 1)
-        cv2.line(newimage,(i*16+r+15,j*6),(i*16+r+15,(j+1)*6),(0,0,0), 1)
-        
-  cv2.imshow('huat',newimage)
- 
-## Setup ############################################################
-pygame.init()
-myfont = pygame.font.SysFont("comicsans", 100)
-myfont.set_bold(True)
-label = myfont.render("Desenhar imagem?", 1, (0,0,0))
-pygame.display.set_caption("Vertical Plotter")
-screen = pygame.display.set_mode([1280,960])
-camera = cv2.VideoCapture(0)
-escolha = True
+        cv2.line(newimage,(i*8+r,j*3),(i*8+r,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+1,j*3),(i*8+r+1,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+3,j*3),(i*8+r+3,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+5,j*3),(i*8+r+5,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+7,j*3),(i*8+r+7,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+9,j*3),(i*8+r+9,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+11,j*3),(i*8+r+11,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+13,j*3),(i*8+r+13,(j+1)*3),(0,0,0), 1)
+        cv2.line(newimage,(i*8+r+15,j*3),(i*8+r+15,(j+1)*3),(0,0,0), 1)
+  return newimage
 
 ## Main loop #########################################################
 try:
@@ -265,18 +366,9 @@ try:
             ret, frame = camera.read()	
             screen.fill([0,0,0])
             frame = np.rot90(frame)
-            frame = cv2.resize(frame, (960,1280))
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             screen.blit(pygame.surfarray.make_surface(frame), (0,0))
-            pygame.display.update()
-        else:
-            screen.fill([0,0,0])
-            img = cv2.cvtColor(cv2.resize(np.rot90(img_blend),(960,1280)),cv2.COLOR_GRAY2RGB)
-            img = (255.0/1)*(img/(255.0/1))**5
-            img = (255.0/1)*(img/(255.0/1))**5
-            screen.blit(pygame.surfarray.make_surface(img), (0,0))
-            screen.blit(label, (20, 880))
-            pygame.display.update()
+            pygame.display.update()            
 
         for event in pygame.event.get():
             if event.type == KEYDOWN:
@@ -288,7 +380,9 @@ try:
                         exit()
                 if keys[K_RETURN]:
                     if escolha == False:
-                       getCommands(img) 
+                        screen.fill([0,0,0])
+                        screen.blit(pygame.surfarray.make_surface(np.rot90(getCommands(img))), (0,0))
+                        pygame.display.update()
                     else:
                         escolha = False
                         ret, frame = camera.read()
@@ -296,6 +390,13 @@ try:
                         img_gray_inv = 255 - img_gray
                         img_blur = cv2.GaussianBlur(img_gray_inv, ksize=(21, 21),sigmaX=0, sigmaY=0)
                         img_blend = dodgeV2(img_gray, img_blur)
+                        screen.fill([0,0,0])
+                        img = cv2.cvtColor(np.rot90(img_blend),cv2.COLOR_GRAY2RGB)
+                        img = (255.0/1)*(img/(255.0/1))**5
+                        img = (255.0/1)*(img/(255.0/1))**5
+                        screen.blit(pygame.surfarray.make_surface(img), (0,0))
+                        screen.blit(label, (20, 410))
+                        pygame.display.update()
                 
 except KeyboardInterrupt,SystemExit:
     pygame.quit()
@@ -305,7 +406,15 @@ except KeyboardInterrupt,SystemExit:
 
 
 
-'''        
+'''
+
+
+
+
+
+
+
+      
         
         
 ''' #---------------------------------------------------------------------------------
